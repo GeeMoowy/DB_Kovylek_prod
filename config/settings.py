@@ -106,3 +106,6 @@ ADMIN_LIST_PER_PAGE = 50
 
 # Включим "быстрое редактирование" в списке
 ADMIN_QUICK_EDIT = True
+
+DATE_INPUT_FORMATS = ['%d-%m-%Y', '%Y-%m-%d']
+DATE_FORMAT = 'd-m-Y'

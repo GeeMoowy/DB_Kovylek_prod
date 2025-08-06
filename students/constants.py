@@ -12,12 +12,12 @@ AGE_CHOICES = [
     (AGE_KIDS, "Детки"),
 ]
 
-GENDER_MALE = "M"
-GENDER_FEMALE = "Д"
+GENDER_MALE = "Мальчики"
+GENDER_FEMALE = "Девочки"
 
 GENDER_CHOICES = [
-    (GENDER_MALE, "Мальчики"),
-    (GENDER_FEMALE, "Девочки"),
+    (GENDER_MALE, "М"),
+    (GENDER_FEMALE, "Д"),
 ]
 
 STATUS_CHOICES = [

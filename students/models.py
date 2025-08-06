@@ -16,7 +16,7 @@ class Group(models.Model):
     )
     gender = models.CharField(
         'Пол группы',
-        max_length=1,
+        max_length=10,
         choices=GENDER_CHOICES
     )
     is_active = models.BooleanField(
@@ -57,7 +57,7 @@ class Student(models.Model):
         null=True)
     gender = models.CharField(
         'Пол',
-        max_length=1,
+        max_length=20,
         choices=GENDER_CHOICES
     )
     group = models.ForeignKey(
