@@ -109,3 +109,6 @@ ADMIN_QUICK_EDIT = True
 
 DATE_INPUT_FORMATS = ['%d-%m-%Y', '%Y-%m-%d']
 DATE_FORMAT = 'd-m-Y'
+
+LOGIN_REDIRECT_URL = '/'  # Куда перенаправлять после успешного входа
+LOGOUT_REDIRECT_URL = '/'  # Куда перенаправлять после выхода

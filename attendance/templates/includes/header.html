@@ -1,0 +1,63 @@
+{% load static %}
+
+<header class="navbar navbar-expand-md navbar-dark bg-dark sticky-top">
+    <div class="container">
+        <!-- Логотип и название сайта -->
+        <a class="navbar-brand" href="{% url 'attendance:home' %}">
+            <img src="{% static 'images/logo.svg' %}" alt="Логотип Ковылек.Ру-лит" width="30" height="30" class="d-inline-block align-top">
+            Ковылек.Ру-лит
+        </a>
+
+        <!-- Кнопка для мобильного меню -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Основное меню -->
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="{% url 'attendance:home' %}">Главная</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link">Календарь</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link">Репетиции</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link">Создать репетицию</a>
+                </li>
+            </ul>
+
+            <!-- Дополнительные элементы (поиск, авторизация) -->
+            {% comment "Этот раздел временно отключен" %}
+            <!--
+            <div class="d-flex">
+                <form class="d-flex me-2" action="{% url 'search' %}" method="get">
+                    <input class="form-control me-2" type="search" placeholder="Поиск..." aria-label="Search" name="q">
+                    <button class="btn btn-outline-light" type="submit">Найти</button>
+                </form>
+
+                {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <a href="#" class="d-block link-light text-decoration-none dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                            {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownUser">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">Профиль</a></li>
+                            <li><a class="dropdown-item" href="{% url 'settings' %}">Настройки</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Выйти</a></li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-outline-light me-2">Вход</a>
+                    <a href="{% url 'register' %}" class="btn btn-warning">Регистрация</a>
+                {% endif %}
+            </div>
+            -->
+            {% endcomment %}
+        </div>
+    </div>
+</header>
