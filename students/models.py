@@ -1,10 +1,13 @@
 from django.db import models
-from .constants import AGE_CHOICES, GENDER_CHOICES
 from phonenumber_field.modelfields import PhoneNumberField
+from django.core.validators import FileExtensionValidator
+
+from .constants import AGE_CHOICES, GENDER_CHOICES
+
 
 
 class Group(models.Model):
-    """"""
+    """Модель группы"""
 
     age_category = models.CharField(
         'Возрастная категория',
@@ -22,6 +25,14 @@ class Group(models.Model):
     is_active = models.BooleanField(
         'Активна',
         default=True
+    )
+    image = models.ImageField(
+        'Фото группы',
+        upload_to='groups/images/',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png'])],
+        help_text='Рекомендуемый размер: 800x600px'
     )
 
     class Meta:

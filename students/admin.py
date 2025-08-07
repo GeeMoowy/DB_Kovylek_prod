@@ -9,7 +9,7 @@ from .models import Group, Student
 
 @admin.register(Group)
 class GroupAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'age_category', 'is_active', 'students_count', 'repetitions_count')
+    list_display = ('__str__', 'age_category', 'is_active', 'students_count', 'repetitions_count', 'display_image')
     list_filter = ('age_category', 'year', 'gender', 'is_active')
     search_fields = ['age_category', 'year', 'gender']
     list_editable = ('is_active',)
@@ -23,6 +23,12 @@ class GroupAdmin(admin.ModelAdmin):
         link = reverse("admin:attendance_repetition_changelist") + f"?group__id__exact={obj.id}"
         return mark_safe(f'<a href="{link}">{count} занятий</a>')
     repetitions_count.short_description = 'Занятия'
+
+    def display_image(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" width="50" />', obj.image.url)
+        return "Нет фото"
+    display_image.short_description = 'Фото'
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
