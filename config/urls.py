@@ -10,7 +10,8 @@ urlpatterns = [
 
     # Приложения
     path('attendance/', include('attendance.urls', namespace='attendance')),
-    path('', include('students.urls', namespace='students'))
+    path('', include('students.urls', namespace='students')),
+    path('users/', include('users.urls', namespace='users')),
 ]
 
 if settings.DEBUG:

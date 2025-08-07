@@ -111,4 +111,4 @@ DATE_INPUT_FORMATS = ['%d-%m-%Y', '%Y-%m-%d']
 DATE_FORMAT = 'd-m-Y'
 
 LOGIN_REDIRECT_URL = '/'  # Куда перенаправлять после успешного входа
-LOGOUT_REDIRECT_URL = '/'  # Куда перенаправлять после выхода
+LOGOUT_REDIRECT_URL = 'students:main'  # Куда перенаправлять после выхода

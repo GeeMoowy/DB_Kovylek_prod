@@ -1,0 +1,46 @@
+{% extends 'attendance/base.html' %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Редактирование профиля, {{ user.email }}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="mb-4 text-center">
+                            {% if form.instance.avatar %}
+                                <img src="{{ form.instance.avatar.url }}"
+                                     class="rounded-circle mb-3"
+                                     width="150"
+                                     height="150"
+                                     alt="Аватар">
+                            {% else %}
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center"
+                                     style="width: 150px; height: 150px; margin: 0 auto;">
+                                    <span class="text-muted">Нет аватара</span>
+                                </div>
+                            {% endif %}
+                            <div class="form-group">
+                                <label for="{{ form.avatar.id_for_label }}">Изменить аватар</label>
+                                {{ form.avatar }}
+                                <small class="form-text text-muted">Рекомендуемый размер: 150x150px</small>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">Сохранить</button>
+                            <a href="{% url 'students:main' %}" class="btn btn-secondary">Отмена</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
