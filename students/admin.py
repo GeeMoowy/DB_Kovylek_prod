@@ -2,12 +2,14 @@ from django.contrib import admin
 from django.utils.html import format_html
 from phonenumber_field.widgets import PhoneNumberPrefixWidget
 from phonenumber_field.formfields import PhoneNumberField
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 
 from .models import Group, Student
 
 @admin.register(Group)
 class GroupAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'age_category', 'year', 'gender', 'is_active', 'students_count')
+    list_display = ('__str__', 'age_category', 'is_active', 'students_count', 'repetitions_count')
     list_filter = ('age_category', 'year', 'gender', 'is_active')
     search_fields = ['age_category', 'year', 'gender']
     list_editable = ('is_active',)
@@ -15,6 +17,12 @@ class GroupAdmin(admin.ModelAdmin):
     def students_count(self, obj):
         return obj.students.count()
     students_count.short_description = 'Количество участников'
+
+    def repetitions_count(self, obj):
+        count = obj.repetition_set.count()
+        link = reverse("admin:attendance_repetition_changelist") + f"?group__id__exact={obj.id}"
+        return mark_safe(f'<a href="{link}">{count} занятий</a>')
+    repetitions_count.short_description = 'Занятия'
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
