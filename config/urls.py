@@ -8,8 +8,8 @@ urlpatterns = [
     # Админка
     path('admin/', admin.site.urls),
 
-    # # Приложения
-    # path('attendance/', include('attendance.urls', namespace='attendance')),
+    # Приложения
+    path('attendance/', include('attendance.urls', namespace='attendance')),
 ]
 
 if settings.DEBUG:
