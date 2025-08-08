@@ -4,6 +4,7 @@ from django.db.models import Count, Q
 
 from attendance.models import Repetition
 from students.models import Group
+from attendance.utils import get_academic_year_dates
 
 
 class HomeView(ListView):
@@ -15,14 +16,8 @@ class HomeView(ListView):
 
     def get_queryset(self):
         """  """
-        today = date.today()
-        # Определяем текущий учебный год
-        if today.month >= 6:
-            start_date = date(today.year, 6, 1)
-            end_date = date(today.year + 1, 5, 31)
-        else:
-            start_date = date(today.year - 1, 6, 1)
-            end_date = date(today.year, 5, 31)
+
+        start_date, end_date = get_academic_year_dates()
         return Group.objects.filter(is_active=True).prefetch_related('students').annotate(
             current_year_repetitions=Count(
                 'repetition',
@@ -63,3 +58,5 @@ class RepetitionListView(ListView):
         return context
 
 
+class RepetitionDitailView():
+    """"""
