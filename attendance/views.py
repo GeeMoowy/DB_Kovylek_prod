@@ -1,4 +1,5 @@
-from django.views.generic import ListView, FormView
+from django.urls import reverse_lazy
+from django.views.generic import ListView, FormView, CreateView
 from django.db.models import Count, Q
 from django.forms import modelformset_factory
 from django.shortcuts import get_object_or_404, reverse
@@ -8,7 +9,7 @@ from django.http import HttpResponseRedirect
 from attendance.models import Repetition, AttendanceRecord
 from students.models import Group
 from attendance.utils import get_academic_year_dates
-from attendance.forms import AttendanceRecordForm
+from attendance.forms import AttendanceRecordForm, RepetitionForm
 
 
 class HomeView(ListView):
@@ -83,7 +84,7 @@ class RepetitionListView(ListView):
             QuerySet: Отфильтрованный и отсортированный список объектов Repetition"""
 
         group_id = self.kwargs['pk']
-        queryset = Repetition.objects.filter(group_id=group_id)
+        queryset = Repetition.objects.filter(group_id=self.kwargs['pk'])
 
         # Фильтрация по дате (если переданы параметры)
         date_from = self.request.GET.get('date_from')
@@ -167,3 +168,23 @@ class AttendanceFormView(FormView):
 
     def get_success_url(self):
         return reverse('attendance:repetition_list', kwargs={'pk': self.repetition.group.id})
+
+
+class RepetitionCreateView(CreateView):
+    model = Repetition
+    fields = ['date', 'start_time', 'duration', 'notes']
+    template_name = 'attendance/repetition_form.html'
+
+    def form_valid(self, form):
+        form.instance.group = get_object_or_404(Group, pk=self.kwargs['pk'])
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('attendance:repetition_list', kwargs={'pk': self.kwargs['pk']})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['group'] = get_object_or_404(Group, pk=self.kwargs['pk'])
+        return context
+
+
