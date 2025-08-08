@@ -5,5 +5,57 @@
 {% load static %}
 
 {% block content %}
-Домашняя журнала
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Возрастные группы</h1>
+
+    <div class="row">
+        {% for group in groups %}
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'attendance:repetition_list' pk=group.id %}" class="text-decoration-none">
+                <div class="card h-100 group-card">
+                    {% if group.image %}
+                    <img src="{{ group.image.url }}" class="card-img-top group-image" alt="{{ group }}">
+                    {% else %}
+                    <div class="card-img-top group-image bg-secondary d-flex align-items-center justify-content-center">
+                        <span class="text-white">Нет фото</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="card-body">
+                        <h5 class="card-title text-dark">{{ group }}</h5>
+                        <p class="card-text text-muted">
+                            <strong>Участников:</strong> {{ group.students.count }}<br>
+                            <strong>Репетиций в этом году:</strong> {{ group.current_year_repetitions }}<br>
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">Нет активных групп</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .group-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        border: none;
+    }
+    .group-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .group-image {
+        height: 200px;
+        object-fit: cover;
+    }
+    /* Убираем стандартное подчеркивание ссылки */
+    a.group-link {
+        text-decoration: none;
+    }
+</style>
 {% endblock %}
