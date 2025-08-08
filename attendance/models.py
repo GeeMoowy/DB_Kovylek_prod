@@ -76,7 +76,6 @@ class AttendanceRecord(models.Model):
     class Meta:
         verbose_name = 'Запись посещаемости'
         verbose_name_plural = 'Записи посещаемости'
-        unique_together = ['repetition', 'student']
 
     def __str__(self):
         return f"{self.student} - {'Присутствовал' if self.present else 'Отсутствовал'}"

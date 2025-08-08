@@ -56,7 +56,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a class="btn btn-sm btn-primary">
+                        <a href="{% url 'attendance:attendance_form' pk=repetition.id %}" class="btn btn-sm btn-primary">
                             Отметить посещаемость
                         </a>
                     </td>
