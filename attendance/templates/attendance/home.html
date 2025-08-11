@@ -97,13 +97,73 @@
         border-color: rgba(0, 188, 212, 0.3);
         color: #006064;
     }
+    .table-info th {
+    background-color: #17a2b8;
+    color: white;
+    }
+
+    .bg-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+
+    .table-responsive {
+    border-radius: 0 0 15px 15px;
+    }
 </style>
 
 <div class="container mt-1">
+    <!-- Блок сегодняшних репетиций -->
+    {% if todays_repetitions %}
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-calendar-check me-2"></i>
+                Репетиции на сегодня ({{ todays_repetitions.0.date|date:"d.m.Y" }})
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-info">
+                        <tr>
+                            <th>Группа</th>
+                            <th>Время</th>
+                            <th>Длительность</th>
+                            <th>Примечания</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rep in todays_repetitions %}
+                        <tr>
+                            <td>{{ rep.group }}</td>
+                            <td>{{ rep.start_time|time:"H:i" }}</td>
+                            <td>{{ rep.get_duration_display }}</td>
+                            <td>
+                                {% if rep.notes %}
+                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip"
+                                        title="{{ rep.notes }}">
+                                    <i class="bi bi-info-circle"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'attendance:attendance_form' pk=rep.id %}"
+                                   class="btn btn-sm btn-primary">
+                                    <i class="bi bi-check-circle"></i> Отметить
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     <h1 class="text-center mb-4">
         <i class="bi bi-people-fill me-2"></i>Возрастные группы
     </h1>
-
     <div class="row g-4">
         {% for group in groups %}
         <div class="col-lg-4 col-md-6">

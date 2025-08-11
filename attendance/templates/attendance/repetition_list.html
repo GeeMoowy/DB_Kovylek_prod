@@ -1,4 +1,5 @@
-{{% extends 'attendance/base.html' %}
+{% extends 'attendance/base.html' %}
+{% load delta_filters %}
 {% block title %}Репетиции группы {{ group }}{% endblock %}
 {% block content %}
 <style>
@@ -9,7 +10,7 @@
     }
 
     .container {
-        padding-top: 2rem;
+        padding-top: 0rem;
         padding-bottom: 2rem;
     }
 
@@ -74,9 +75,7 @@
         color: #008ba3;
     }
 </style>
-
 <div class="container">
-    <!-- Фильтр -->
     <div class="card">
         <div class="card-header">
             <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Фильтр репетиций</h5>
@@ -134,12 +133,14 @@
                     <th><i class="bi bi-stopwatch me-1"></i> Длительность</th>
                     <th><i class="bi bi-chat-text me-1"></i> Примечания</th>
                     <th><i class="bi bi-people me-1"></i> Посещаемость</th>
+                    <th><i class="bi bi-pencil-square me-1"></i> Редактировать</th>
+                    <th><i class="bi bi-trash me-1"></i> Удалить</th>
                 </tr>
             </thead>
             <tbody>
                 {% for repetition in repetitions %}
                 <tr>
-                    <td>{{ repetition.date|date:"d.m.Y" }}</td>
+                    <td>{{ repetition.date|date:"d.m.Y, l" }}</td>
                     <td>{{ repetition.start_time|time:"H:i" }}</td>
                     <td>{{ repetition.get_duration_display }}</td>
                     <td>
@@ -151,10 +152,39 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'attendance:attendance_form' pk=repetition.id %}"
-                           class="btn btn-sm btn-primary">
-                            <i class="bi bi-check-circle me-1"></i> Отметить
-                        </a>
+                        <div class="d-flex gap-2">
+                            {% if repetition.is_attendance_completed %}
+                                <!-- Если посещаемость уже отмечена -->
+                                <button class="btn btn-sm btn-success" disabled>
+                                    <i class="bi bi-check-circle-fill"></i> Отмечено
+                                </button>
+                                <a href="{% url 'attendance:attendance_form' pk=repetition.id %}"
+                                    class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i> Изменить
+                                </a>
+
+                            {% elif repetition.can_mark %}
+                                <!-- Если можно отмечать (осталось <= 30 минут) -->
+                                <a href="{% url 'attendance:attendance_form' pk=repetition.id %}"
+                                class="btn btn-sm btn-primary">
+                                <i class="bi bi-check-circle"></i> Отметить
+                                </a>
+
+                            {% else %}
+                                <!-- Если нельзя отмечать (еще рано) -->
+                                <button class="btn btn-sm btn-secondary" disabled
+                                    title="До начала репетиции: {{ repetition.time_until_start|format_timedelta }}">
+                                    <i class="bi bi-clock"></i>
+                                        {% with remaining=repetition.time_until_start|format_timedelta %}
+                                        {% if 'дн' in remaining %}
+                                            Доступ через {{ remaining }}
+                                        {% else %}
+                                            Доступ через {{ remaining|slice:":2" }} ч {{ remaining|slice:"3:" }} мин
+                                        {% endif %}
+                                    {% endwith %}
+                                </button>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -210,5 +240,26 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('date_from').value = today;
     document.getElementById('date_to').value = today;
 });
+
+function updateTimeRemaining() {
+    document.querySelectorAll('.time-remaining').forEach(el => {
+        const endTime = new Date(el.dataset.endTime);
+        const now = new Date();
+        const diff = endTime - now;
+
+        if (diff <= 0) {
+            el.innerHTML = 'Доступно для отметки';
+            el.closest('tr').querySelector('.mark-btn').classList.remove('disabled');
+        } else {
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            el.innerHTML = `Доступ через ${hours}ч ${minutes}м`;
+        }
+    });
+}
+
+// Обновляем каждую минуту
+updateTimeRemaining();
+setInterval(updateTimeRemaining, 60000);
 </script>
 {% endblock %}

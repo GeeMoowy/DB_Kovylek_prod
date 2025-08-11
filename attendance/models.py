@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from datetime import timedelta
 
 from attendance.constants import DURATION_CHOICES, STATUS_CHOICES
 
@@ -38,6 +39,16 @@ class Repetition(models.Model):
         verbose_name_plural = 'Репетиции'
         ordering = ['-date']
         unique_together = ['date', 'group', 'start_time']
+
+    @property
+    def can_mark_attendance(self):
+        """Проверяет, можно ли отмечать посещаемость (осталось <= 30 минут до начала)"""
+        now = timezone.now()
+        repetition_datetime = timezone.make_aware(
+            timezone.datetime.combine(self.date, self.start_time)
+        )
+        time_until = repetition_datetime - now
+        return time_until <= timedelta(minutes=30)
 
     def __str__(self):
         return f"{self.date} {self.group}"
@@ -94,3 +105,8 @@ class AttendanceRecord(models.Model):
         if self.status != 'present':
             return self.get_status_display()
         return 'Присутствовал' if self.present else 'Отсутствовал'
+
+    @property
+    def is_completed(self):
+        """Проверяет, была ли заполнена посещаемость"""
+        return self.attendance_records.exists()

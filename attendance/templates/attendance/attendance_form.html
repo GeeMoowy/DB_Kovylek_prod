@@ -10,7 +10,7 @@
     }
 
     .container {
-        padding-top: 1.5rem;
+        padding-top: 0rem;
         padding-bottom: 2rem;
     }
 
@@ -60,14 +60,27 @@
     }
 
     .form-check-input {
-        transform: scale(1.5);
-        cursor: pointer;
-        margin-top: 0;
+    width: 1.5em;
+    height: 1.5em;
+    margin-top: 0;
+    cursor: pointer;
+    position: relative;
     }
 
     .form-check-input:checked {
-        background-color: #00bcd4;
-        border-color: #00bcd4;
+    background-color: #00bcd4;
+    border-color: #00bcd4;
+    }
+
+    /* Кастомная галочка */
+    .form-check-input:checked::after {
+    content: "✓";
+    position: absolute;
+    color: white;
+    font-size: 1em;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     }
 
     .form-select {

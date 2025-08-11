@@ -1,6 +1,10 @@
+from datetime import timedelta
+
+from django.utils import timezone
+from dateutil.utils import today
 from django.urls import reverse_lazy
 from django.views.generic import ListView, FormView, CreateView
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Prefetch
 from django.forms import modelformset_factory
 from django.shortcuts import get_object_or_404, reverse
 from django.contrib import messages
@@ -29,21 +33,18 @@ class HomeView(ListView):
     context_object_name = 'groups'
 
     def get_queryset(self):
-        """Возвращает queryset активных учебных групп с аннотацией количества проведенных занятий
-        в текущем учебном году.
-        Вычисляет даты начала и конца текущего учебного года с помощью функции
-        get_academic_year_dates(), затем фильтрует активные группы и добавляет аннотацию
-        с количеством связанных объектов Repetition в пределах учебного года.
-        Returns:
-            QuerySet: Аннотированный queryset групп со следующими полями:
-                - Все стандартные поля модели Group
-                - current_year_repetitions (int): Количество повторений в текущем учебном году
-        Prefetch:
-            Использует prefetch_related для оптимизации загрузки связанных студентов.
-        """
-
         start_date, end_date = get_academic_year_dates()
-        return Group.objects.filter(is_active=True).prefetch_related('students').annotate(
+        today = timezone.now().date()
+
+        # Оптимизированный запрос для групп
+        return Group.objects.filter(is_active=True).prefetch_related(
+            Prefetch(
+                'repetition_set',
+                queryset=Repetition.objects.filter(date=today),
+                to_attr='todays_repetitions'
+            ),
+            'students'
+        ).annotate(
             current_year_repetitions=Count(
                 'repetition',
                 filter=Q(
@@ -53,40 +54,32 @@ class HomeView(ListView):
             )
         )
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = timezone.now().date()
+
+        # Получаем все сегодняшние репетиции для всех групп
+        context['todays_repetitions'] = Repetition.objects.filter(
+            date=today,
+            group__in=context['groups']
+        ).select_related('group').order_by('start_time')
+        return context
+
 
 class RepetitionListView(ListView):
     """Контроллер для отображения списка занятий (repetitions) конкретной учебной группы
-    с возможностью фильтрации по датам и пагинацией.
-    Наследуется от Django's ListView для отображения списка занятий с:
-    - Пагинацией по 10 элементов на страницу
-    - Фильтрацией по диапазону дат
-    - Сортировкой по дате (новые сначала) и времени начала
-    Attributes:
-        template_name (str): Путь к шаблону repetition_list.html
-        context_object_name (str): Имя переменной контекста для списка занятий
-        paginate_by (int): Количество элементов на страницу пагинации
-    Methods:
-        get_queryset: Возвращает отфильтрованный и отсортированный queryset занятий
-        get_context_data: Добавляет в контекст информацию о группе"""
+    с возможностью фильтрации по датам и пагинацией."""
 
     template_name = 'repetition_list.html'
     context_object_name = 'repetitions'
     paginate_by = 10
 
     def get_queryset(self):
-        """Возвращает queryset занятий для конкретной группы с возможной фильтрацией по датам.
-        Получает ID группы из URL параметров, затем:
-            1. Базовый queryset всех занятий этой группы
-            2. Применяет фильтрацию по дате начала (если передан параметр date_from)
-            3. Применяет фильтрацию по дате окончания (если передан параметр date_to)
-            4. Сортирует результаты по убыванию даты и возрастанию времени начала
-        Returns:
-            QuerySet: Отфильтрованный и отсортированный список объектов Repetition"""
-
+        """Возвращает queryset занятий для конкретной группы с возможной фильтрацией по датам."""
         group_id = self.kwargs['pk']
-        queryset = Repetition.objects.filter(group_id=self.kwargs['pk'])
+        queryset = Repetition.objects.filter(group_id=group_id).select_related('group')
 
-        # Фильтрация по дате (если переданы параметры)
+        # Фильтрация по дате
         date_from = self.request.GET.get('date_from')
         date_to = self.request.GET.get('date_to')
 
@@ -98,16 +91,25 @@ class RepetitionListView(ListView):
         return queryset.order_by('-date', 'start_time')
 
     def get_context_data(self, **kwargs):
-        """Расширяет базовый контекст шаблона информацией о текущей учебной группе.
-        Добавляет в контекст:
-            - Объект группы (Group), к которой относятся отображаемые занятия
-            - Все стандартные переменные контекста ListView
-        Returns:
-            dict: Контекст данных для передачи в шаблон"""
-
         context = super().get_context_data(**kwargs)
         group_id = self.kwargs['pk']
         context['group'] = Group.objects.get(id=group_id)
+
+        now = timezone.now()
+
+        for repetition in context['repetitions']:
+            # Проверяем, можно ли отмечать посещаемость
+            repetition_datetime = timezone.make_aware(
+                timezone.datetime.combine(repetition.date, repetition.start_time)
+            )
+            time_until = repetition_datetime - now
+
+            repetition.can_mark = time_until <= timedelta(minutes=30)
+            repetition.time_until_start = time_until
+
+            # Сохраняем существующую логику по заполненности
+            repetition.is_attendance_completed = repetition.attendance_records.exists()
+
         return context
 
 
