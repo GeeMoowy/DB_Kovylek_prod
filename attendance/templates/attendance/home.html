@@ -148,9 +148,9 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'attendance:attendance_form' pk=rep.id %}"
+                                <a href="{% url 'attendance:repetition_list' pk=rep.group.id %}"
                                    class="btn btn-sm btn-primary">
-                                    <i class="bi bi-check-circle"></i> Отметить
+                                    <i class="bi bi-list-ul"></i> Перейти
                                 </a>
                             </td>
                         </tr>
