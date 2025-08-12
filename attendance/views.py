@@ -1,19 +1,25 @@
-from datetime import timedelta
-
+from datetime import timedelta, datetime, date
+from calendar import monthrange
 from django.utils import timezone
 from dateutil.utils import today
 from django.urls import reverse_lazy
-from django.views.generic import ListView, FormView, CreateView
+from django.views.generic import ListView, FormView, CreateView, TemplateView
 from django.db.models import Count, Q, Prefetch
 from django.forms import modelformset_factory
 from django.shortcuts import get_object_or_404, reverse
 from django.contrib import messages
 from django.http import HttpResponseRedirect
+from django.template.defaulttags import register
 
 from attendance.models import Repetition, AttendanceRecord
-from students.models import Group
+from students.models import Group, Student
 from attendance.utils import get_academic_year_dates
 from attendance.forms import AttendanceRecordForm, RepetitionForm
+
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
 
 
 class HomeView(ListView):
@@ -190,3 +196,63 @@ class RepetitionCreateView(CreateView):
         return context
 
 
+class CalendarView(TemplateView):
+    template_name = 'attendance/calendar.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        group = get_object_or_404(Group, pk=self.kwargs['pk'])
+        today = timezone.now().date()
+
+        # Получаем год и месяц из параметров или текущую дату
+        year = int(self.kwargs.get('year', today.year))
+        month = int(self.kwargs.get('month', today.month))
+        month_date = date(year, month, 1)
+
+        # Рассчитываем соседние месяцы
+        prev_month = (month_date - timedelta(days=1)).replace(day=1)
+        next_month = (month_date + timedelta(days=32)).replace(day=1)
+
+        # Годы для выпадающего списка (текущий год ±5 лет)
+        years = range(today.year - 5, today.year + 6)
+
+        # Получаем репетиции за выбранный месяц
+        repetitions = Repetition.objects.filter(
+            group=group,
+            date__year=year,
+            date__month=month
+        ).order_by('date')
+
+        # Получаем участников и их посещаемость
+        students = Student.objects.filter(group=group).order_by('last_name', 'first_name')
+
+        calendar_data = []
+        for student in students:
+            attendance = {
+                rep.date: rep.attendance_records.filter(student=student).first().status
+                if rep.attendance_records.filter(student=student).exists() else None
+                for rep in repetitions
+            }
+            calendar_data.append({
+                'student': student,
+                'attendance': attendance
+            })
+
+        context.update({
+            'group': group,
+            'month_date': month_date,
+            'prev_month': prev_month,
+            'next_month': next_month,
+            'years': years,
+            'months': [
+                (1, 'Январь'), (2, 'Февраль'), (3, 'Март'),
+                (4, 'Апрель'), (5, 'Май'), (6, 'Июнь'),
+                (7, 'Июль'), (8, 'Август'), (9, 'Сентябрь'),
+                (10, 'Октябрь'), (11, 'Ноябрь'), (12, 'Декабрь')
+            ],
+            'current_year': year,
+            'current_month': month,
+            'repetitions': repetitions,
+            'calendar_data': calendar_data
+        })
+        return context

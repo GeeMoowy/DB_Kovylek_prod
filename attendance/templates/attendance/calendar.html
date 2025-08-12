@@ -1,0 +1,232 @@
+{% extends 'attendance/base.html' %}
+{% load attendance_tags %}
+
+{% block content %}
+<style>
+    .calendar-container {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    .calendar-header {
+        background: linear-gradient(135deg, #00bcd4 0%, #008ba3 100%);
+        color: white;
+        padding: 15px 20px;
+    }
+    .calendar-nav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .calendar-title {
+        flex-grow: 1;
+        margin: 0;
+        font-size: 1.25rem;
+    }
+    .table-responsive-container {
+        width: 100%;
+        overflow-x: auto;
+    }
+    .attendance-table {
+        width: auto;
+        min-width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.9rem;
+    }
+    .attendance-table th {
+        background-color: #f8f9fa;
+        padding: 10px;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border: 1px solid #dee2e6;
+    }
+    .attendance-table td {
+        padding: 8px;
+        text-align: center;
+        border: 1px solid #dee2e6;
+    }
+    .student-column {
+        position: sticky;
+        left: 0;
+        z-index: 3;
+        background: white;
+        width: 200px;
+        min-width: 200px;
+        max-width: 200px;
+        text-align: left;
+        padding-left: 15px;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .date-cell {
+        min-width: 60px;
+        width: 60px;
+        max-width: 60px;
+        text-align: center;
+        padding: 8px 5px;
+    }
+    .weekend {
+        background-color: #f8f9fa;
+    }
+    .today {
+        background-color: #e7f8ff !important;
+        font-weight: bold;
+    }
+    .status-present {
+        color: #28a745;
+        font-size: 1.2rem;
+    }
+    .status-absent {
+        color: #dc3545;
+        font-size: 1.2rem;
+    }
+    .status-late {
+        color: #ffc107;
+        font-size: 1.2rem;
+    }
+    .status-excused {
+        color: #17a2b8;
+        font-size: 1.2rem;
+    }
+    .month-selector {
+        background-color: white;
+        border-radius: 5px;
+        padding: 5px;
+        border: 1px solid #ced4da;
+    }
+    .text-pink {
+        color: #e83e8c;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="calendar-container">
+        <!-- Шапка с навигацией -->
+        <div class="calendar-header">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                <h3 class="calendar-title mb-3 mb-md-0">
+                    <i class="bi bi-calendar3 me-2"></i>
+                    Календарь посещаемости: {{ group }}
+                    <small class="d-block d-md-inline mt-1 mt-md-0">{{ month_date|date:"F Y" }}</small>
+                </h3>
+
+                <div class="calendar-nav">
+                    <!-- Выбор года -->
+                    <select class="form-select form-select-sm month-selector"
+                            onchange="window.location.href='/attendance/groups/{{ group.pk }}/calendar/' + this.value + '/{{ current_month }}/'">
+                        {% for y in years %}
+                        <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <!-- Выбор месяца -->
+                    <select class="form-select form-select-sm month-selector"
+                            onchange="window.location.href='/attendance/groups/{{ group.pk }}/calendar/{{ current_year }}/' + this.value + '/'">
+                        {% for num, name in months %}
+                        <option value="{{ num }}" {% if num == current_month %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <!-- Кнопки навигации -->
+                    <div class="btn-group btn-group-sm">
+                        <a href="/attendance/groups/{{ group.pk }}/calendar/{{ prev_month.year }}/{{ prev_month.month }}/"
+                           class="btn btn-light" title="Предыдущий месяц">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                        <a href="/attendance/groups/{{ group.pk }}/calendar/"
+                           class="btn btn-light" title="Текущий месяц">
+                            <i class="bi bi-calendar-check"></i>
+                        </a>
+                        <a href="/attendance/groups/{{ group.pk }}/calendar/{{ next_month.year }}/{{ next_month.month }}/"
+                           class="btn btn-light" title="Следующий месяц">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Таблица календаря -->
+        <div class="table-responsive-container">
+            <table class="attendance-table">
+                <thead>
+                    <tr>
+                        <th class="student-column">Участник</th>
+                        {% for rep in repetitions %}
+                        <th class="date-cell {% if rep.date.weekday >= 5 %}weekend{% endif %} {% if rep.date == timezone.now.date %}today{% endif %}">
+                            {{ rep.date|date:"d" }}<br>
+                            <small>
+                                {% if rep.date.weekday == 0 %}Пн
+                                {% elif rep.date.weekday == 1 %}Вт
+                                {% elif rep.date.weekday == 2 %}Ср
+                                {% elif rep.date.weekday == 3 %}Чт
+                                {% elif rep.date.weekday == 4 %}Пт
+                                {% elif rep.date.weekday == 5 %}Сб
+                                {% elif rep.date.weekday == 6 %}Вс{% endif %}
+                            </small>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in calendar_data %}
+                    <tr>
+                        <td class="student-column" title="{{ item.student.full_name }}">
+                            {{ item.student.full_name }}
+                            {% if item.student.gender == 'F' %}
+                                <i class="bi bi-gender-female text-pink ms-1"></i>
+                            {% elif item.student.gender == 'M' %}
+                                <i class="bi bi-gender-male text-primary ms-1"></i>
+                            {% endif %}
+                        </td>
+                        {% for rep in repetitions %}
+                            {% with status=item.attendance|get_item:rep.date %}
+                            <td class="date-cell {% if rep.date.weekday >= 5 %}weekend{% endif %} {% if rep.date == timezone.now.date %}today{% endif %}">
+                                {% if status == 'present' %}
+                                    <i class="bi bi-check-circle-fill status-present" title="Присутствовал"></i>
+                                {% elif status == 'absent' %}
+                                    <i class="bi bi-x-circle-fill status-absent" title="Отсутствовал"></i>
+                                {% elif status == 'late' %}
+                                    <i class="bi bi-clock-fill status-late" title="Опоздал"></i>
+                                {% elif status == 'excused' %}
+                                    <i class="bi bi-check-circle-fill status-absent" title="По уважительной причине"></i>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            {% endwith %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация подсказок
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Прокрутка к текущей дате
+    const todayCells = document.querySelectorAll('.today');
+    if (todayCells.length > 0) {
+        todayCells[0].scrollIntoView({
+            behavior: 'auto',
+            block: 'center',
+            inline: 'center'
+        });
+    }
+});
+</script>
+{% endblock %}
