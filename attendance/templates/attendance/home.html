@@ -185,15 +185,19 @@
                             <i class="bi bi-collection me-2"></i>{{ group }}
                         </h5>
                         <div class="card-text">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-person-check me-2 text-primary"></i>
-                                <span>Участников: {{ group.students.count }}</span>
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-calendar-event me-2 text-primary"></i>
-                                <span>Репетиций: {{ group.current_year_repetitions }}</span>
-                            </div>
-                        </div>
+    <div class="d-flex align-items-center mb-2">
+        <i class="bi bi-person-check me-2 text-primary"></i>
+        <span>Участников: {{ group.students.count }}</span>
+    </div>
+    <div class="d-flex align-items-center mb-2">
+        <i class="bi bi-calendar-event me-2 text-primary"></i>
+        <span>Репетиций: {{ group.current_year_repetitions }}</span>
+    </div>
+    <div class="d-flex align-items-center">
+        <i class="bi bi-graph-up me-2 text-primary"></i>
+        <span>Посещаемость: {{ group.attendance_percent|floatformat:0 }}%</span>
+    </div>
+</div>
                     </div>
 
                     <div class="card-footer bg-transparent border-top-0 text-end">

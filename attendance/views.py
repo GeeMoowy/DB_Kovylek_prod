@@ -1,8 +1,9 @@
 from datetime import timedelta, date
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models.functions import Cast
 from django.utils import timezone
 from django.views.generic import ListView, FormView, CreateView, TemplateView, UpdateView, DeleteView
-from django.db.models import Count, Q, Prefetch
+from django.db.models import Count, Q, Prefetch, Case, When, Value, ExpressionWrapper, F, FloatField
 from django.forms import modelformset_factory
 from django.shortcuts import get_object_or_404, reverse
 from django.contrib import messages
@@ -21,8 +22,7 @@ def get_item(dictionary, key):
 
 
 class HomeView(ListView):
-    """Контроллер для отображения домашней страницы приложения 'Журнал посещаемости'"""
-
+    """Контроллер для отображения домашней страницы"""
     model = Group
     template_name = 'attendance/home.html'
     context_object_name = 'groups'
@@ -31,29 +31,51 @@ class HomeView(ListView):
         start_date, end_date = get_academic_year_dates()
         today = timezone.now().date()
 
-        # Оптимизированный запрос для групп
-        return Group.objects.filter(is_active=True).prefetch_related(
+        # Основной запрос для групп
+        groups = Group.objects.filter(is_active=True).prefetch_related(
             Prefetch(
                 'repetition_set',
                 queryset=Repetition.objects.filter(date=today),
                 to_attr='todays_repetitions'
             ),
             'students'
-        ).annotate(
-            current_year_repetitions=Count(
-                'repetition',
-                filter=Q(
-                    repetition__date__gte=start_date,
-                    repetition__date__lte=end_date
-                )
-            )
         ).order_by('id')
+
+        # Рассчитываем статистику посещаемости отдельным запросом
+        attendance_stats = Group.objects.filter(
+            is_active=True,
+            repetition__date__gte=start_date,
+            repetition__date__lte=end_date
+        ).values('id').annotate(
+            total_repetitions=Count('repetition', distinct=True),
+            total_attendance=Count('repetition__attendance_records'),
+            present_attendance=Count(
+                'repetition__attendance_records',
+                filter=Q(repetition__attendance_records__status__in=['present', 'late'])
+            )
+        )
+
+        # Создаем словарь для быстрого доступа к статистике
+        stats_dict = {stat['id']: stat for stat in attendance_stats}
+
+        # Добавляем статистику к каждому объекту группы
+        for group in groups:
+            stats = stats_dict.get(group.id, {})
+            group.current_year_repetitions = stats.get('total_repetitions', 0)
+            group.total_attendance = stats.get('total_attendance', 0)
+            group.present_attendance = stats.get('present_attendance', 0)
+
+            # Рассчитываем процент посещаемости
+            if group.total_attendance > 0:
+                group.attendance_percent = (group.present_attendance / group.total_attendance) * 100
+            else:
+                group.attendance_percent = 0
+
+        return groups
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         today = timezone.now().date()
-
-        # Получаем все сегодняшние репетиции для всех групп
         context['todays_repetitions'] = Repetition.objects.filter(
             date=today,
             group__in=context['groups']
