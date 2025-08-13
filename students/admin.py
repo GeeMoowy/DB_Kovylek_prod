@@ -9,7 +9,7 @@ from .models import Group, Student
 
 @admin.register(Group)
 class GroupAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'age_category', 'is_active', 'students_count', 'repetitions_count', 'display_image')
+    list_display = ('__str__', 'age_category', 'is_active', 'students_count', 'repetitions_count', 'id', 'display_image')
     list_filter = ('age_category', 'year', 'gender', 'is_active')
     search_fields = ['age_category', 'year', 'gender']
     list_editable = ('is_active',)

@@ -1,9 +1,7 @@
-from datetime import timedelta, datetime, date
-from calendar import monthrange
+from datetime import timedelta, date
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils import timezone
-from dateutil.utils import today
-from django.urls import reverse_lazy
-from django.views.generic import ListView, FormView, CreateView, TemplateView
+from django.views.generic import ListView, FormView, CreateView, TemplateView, UpdateView, DeleteView
 from django.db.models import Count, Q, Prefetch
 from django.forms import modelformset_factory
 from django.shortcuts import get_object_or_404, reverse
@@ -14,7 +12,7 @@ from django.template.defaulttags import register
 from attendance.models import Repetition, AttendanceRecord
 from students.models import Group, Student
 from attendance.utils import get_academic_year_dates
-from attendance.forms import AttendanceRecordForm, RepetitionForm
+from attendance.forms import AttendanceRecordForm
 
 
 @register.filter
@@ -58,7 +56,7 @@ class HomeView(ListView):
                     repetition__date__lte=end_date
                 )
             )
-        )
+        ).order_by('id')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -119,6 +117,57 @@ class RepetitionListView(ListView):
         return context
 
 
+class RepetitionCreateView(CreateView):
+    """Контроллер для создания новой репетиции"""
+    model = Repetition
+    fields = ['date', 'start_time', 'duration', 'notes']
+    template_name = 'attendance/repetition_form.html'
+
+    def form_valid(self, form):
+        form.instance.group = get_object_or_404(Group, pk=self.kwargs['pk'])
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('attendance:repetition_list', kwargs={'pk': self.kwargs['pk']})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        group = get_object_or_404(Group, pk=self.kwargs['pk'])
+        context['group'] = group
+        context['is_edit'] = False  # Флаг для шаблона, что это создание
+        return context
+
+class RepetitionEditView(UpdateView):
+    """Контроллер для редактирования существующей репетиции"""
+    model = Repetition
+    fields = ['date', 'start_time', 'duration', 'notes']
+    template_name = 'attendance/repetition_form.html'
+    pk_url_kwarg = 'pk'  # Параметр из URL для идентификации репетиции
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['group'] = self.object.group  # Группа из редактируемой репетиции
+        context['is_edit'] = True  # Флаг для шаблона, что это редактирование
+        return context
+
+    def get_success_url(self):
+        return reverse('attendance:repetition_list', kwargs={'pk': self.object.group.id})
+
+
+class RepetitionDeleteView(LoginRequiredMixin, DeleteView):
+    model = Repetition
+    template_name = 'attendance/repetition_list.html'  # тот же шаблон
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.delete()
+        return HttpResponseRedirect(success_url)
+
+    def get_success_url(self):
+        return reverse('attendance:repetition_list', kwargs={'pk': self.object.group.id})
+
+
 class AttendanceFormView(FormView):
     template_name = 'attendance/attendance_form.html'
 
@@ -176,24 +225,6 @@ class AttendanceFormView(FormView):
 
     def get_success_url(self):
         return reverse('attendance:repetition_list', kwargs={'pk': self.repetition.group.id})
-
-
-class RepetitionCreateView(CreateView):
-    model = Repetition
-    fields = ['date', 'start_time', 'duration', 'notes']
-    template_name = 'attendance/repetition_form.html'
-
-    def form_valid(self, form):
-        form.instance.group = get_object_or_404(Group, pk=self.kwargs['pk'])
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse('attendance:repetition_list', kwargs={'pk': self.kwargs['pk']})
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['group'] = get_object_or_404(Group, pk=self.kwargs['pk'])
-        return context
 
 
 class CalendarView(TemplateView):
