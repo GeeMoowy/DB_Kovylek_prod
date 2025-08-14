@@ -1,4 +1,7 @@
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
+from django.core.management.utils import get_random_secret_key
 from dotenv import load_dotenv
 import os
 
@@ -7,11 +10,49 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY') or get_random_secret_key().replace('django-insecure-', 'prod-')
 
 DEBUG = True if os.getenv('DEBUG') == 'True' else False
 
-ALLOWED_HOSTS = ['*']
+# Основные домены (латиница + punycode для кириллицы)
+BASE_DOMAINS = [
+    'kovylek.ru',
+    'xn--b1agncdq6g.xn--p1ai'  # Точный Punycode для ковылек.рф
+]
+
+# Автоматически генерируемые варианты
+GENERATED_HOSTS = [
+    *{host.lower() for host in BASE_DOMAINS},  # Уникализация и приведение к lowercase
+    *(f'www.{domain}' for domain in BASE_DOMAINS),
+]
+
+# Базовые локальные адреса
+LOCAL_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '[::1]'  # IPv6 localhost
+]
+
+# Яндекс Cloud IP (только если указаны в .env)
+YANDEX_HOSTS = list(filter(None, [
+    os.getenv('YANDEX_INTERNAL_IP'),
+    os.getenv('YANDEX_EXTERNAL_IP')
+]))
+
+# Итоговый список ALLOWED_HOSTS
+ALLOWED_HOSTS = [
+    *GENERATED_HOSTS,
+    *LOCAL_HOSTS,
+    *YANDEX_HOSTS,
+    *filter(None, os.getenv('EXTRA_ALLOWED_HOSTS', '').split(','))
+]
+
+# Проверка для production
+if not DEBUG:
+    if 'ковылек.рф' in ALLOWED_HOSTS:
+        raise ImproperlyConfigured(
+            'Для production используйте только Punycode (xn--b1agncdq6g.xn--p1ai) вместо кириллицы'
+        )
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -59,11 +100,15 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB'),
+        'NAME': os.getenv('POSTGRES_DB', 'Kovylek_DB'),
         'USER': os.getenv('POSTGRES_USER'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+        'OPTIONS': {
+            'connect_timeout': 3,
+            'sslmode': 'require'
+        }
     }
 }
 
@@ -104,6 +149,9 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # Для collectstatic
+MEDIA_ROOT = '/var/www/media'  # Вне контейнера
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.User'
@@ -119,3 +167,17 @@ DATE_FORMAT = 'd-m-Y'
 
 LOGIN_REDIRECT_URL = '/'  # Куда перенаправлять после успешного входа
 LOGOUT_REDIRECT_URL = 'students:main'  # Куда перенаправлять после выхода
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
