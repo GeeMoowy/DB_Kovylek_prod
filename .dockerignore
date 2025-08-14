@@ -1,0 +1,28 @@
+# Игнорируем системные и IDE-файлы
+.git
+.idea
+.vscode
+.DS_Store
+
+# Игнорируем виртуальные окружения и кэш Python
+.venv*/
+venv*/
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+
+# Игнорируем локальные настройки и БД
+.env
+.env.local
+*.sqlite3
+/db.sqlite3
+
+# Статика и медиа (если собираются в процессе)
+/staticfiles/
+/media/
+
+# Логи и тестовые данные
+logs/
+*.log
+/tests/
