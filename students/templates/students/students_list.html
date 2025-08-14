@@ -1,0 +1,63 @@
+{% extends 'attendance/base.html' %}
+
+{% block title %}Список участников{% endblock %}
+
+{% block content %}
+    <!-- Поле выбора группы -->
+    <div>
+        <label>Фильтр по группе:</label>
+        <select id="group-filter">
+            <option value="all">Все группы</option>
+            {% for group in unique_groups %}
+                <option value="{{ group.id }}">{{ group.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Таблица со студентами -->
+    <table id="students-table">
+        <thead>
+            <tr>
+                <th>Фамилия</th>
+                <th>Имя</th>
+                <th>Группа</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+                <tr data-group="{{ student.group.id }}">
+                    <td>{{ student.last_name }}</td>
+                    <td>{{ student.first_name }}</td>
+                    <td>{{ student.group.name }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Скрипт фильтрации -->
+    <script>
+        // Ждем загрузки DOM
+        document.addEventListener('DOMContentLoaded', function() {
+            // Находим элементы на странице
+            const filterSelect = document.getElementById('group-filter');
+            const tableRows = document.querySelectorAll('#students-table tbody tr');
+
+            // Обработчик изменения выбора группы
+            filterSelect.addEventListener('change', function() {
+                const selectedGroupId = this.value;
+
+                // Перебираем все строки таблицы
+                for (let row of tableRows) {
+                    const rowGroupId = row.getAttribute('data-group');
+
+                    // Показываем/скрываем строки в зависимости от выбора
+                    if (selectedGroupId === 'all' || rowGroupId === selectedGroupId) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}
