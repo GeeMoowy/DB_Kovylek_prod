@@ -10,7 +10,7 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY') or get_random_secret_key().replace('django-insecure-', 'prod-')
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY') or get_random_secret_key().replace('django-insecure-', 'prod-')
 
 DEBUG = True if os.getenv('DEBUG') == 'True' else False
 
