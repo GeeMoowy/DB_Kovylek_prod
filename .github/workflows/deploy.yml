@@ -52,10 +52,3 @@ jobs:
           docker compose exec web python manage.py collectstatic --noinput
           docker system prune -f
           EOF
-
-      - name: Simple check
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "docker compose ps"
