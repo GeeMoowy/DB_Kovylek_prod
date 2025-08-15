@@ -55,4 +55,9 @@ jobs:
 
       - name: Health check
         run: |
-          curl --retry 5 --retry-delay 10 --retry-connrefused -X GET https://${{ secrets.SERVER_IP }}/api/health/
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+            docker compose exec web python -c \"
+            import urllib.request; 
+            print(urllib.request.urlopen('http://web:8000/api/health/').read())
+            \"
+          "
