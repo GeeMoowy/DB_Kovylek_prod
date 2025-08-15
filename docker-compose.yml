@@ -42,7 +42,7 @@ services:
     volumes:
       - /etc/letsencrypt/archive/kovylek.ru:/etc/letsencrypt/live/kovylek.ru:ro
       - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./static:/app/static:ro
+      - static_volume:/app/staticfiles:ro
       - media_volume:/app/media
     environment:
       - NGINX_HOST=kovylek.ru
