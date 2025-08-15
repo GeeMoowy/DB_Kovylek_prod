@@ -116,6 +116,7 @@ TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 # # === Обязательные настройки безопасности для продакшена ===
 # SECURE_SSL_REDIRECT = True
