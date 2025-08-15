@@ -55,9 +55,14 @@ jobs:
 
       - name: Health check
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-            docker compose exec web python -c \"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} \
+            "docker compose exec web python -c \"
             import urllib.request; 
-            print(urllib.request.urlopen('http://web:8000/api/health/').read())
-            \"
-          "
+            try: 
+              response = urllib.request.urlopen('http://web:8000/api/health/')
+              print(response.read().decode())
+              exit(0)
+            except Exception as e: 
+              print(f'Error: {e}')
+              exit(1)
+            \""
