@@ -18,13 +18,10 @@ BASE_DOMAINS = ['kovylek.ru']
 
 # Итоговый список ALLOWED_HOSTS
 ALLOWED_HOSTS = [
-    *{host.lower() for host in BASE_DOMAINS},  # Основной домен
-    *(f'www.{domain}' for domain in BASE_DOMAINS),
+    'kovylek.ru',
+    'www.kovylek.ru',
     'localhost',
     '127.0.0.1',
-    os.getenv('YANDEX_INTERNAL_IP', ''),
-    os.getenv('YANDEX_EXTERNAL_IP', ''),
-    *filter(None, os.getenv('EXTRA_ALLOWED_HOSTS', '').split(','))
 ]
 
 # === Статика и медиа ===
