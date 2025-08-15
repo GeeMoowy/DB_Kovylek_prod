@@ -34,9 +34,10 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOL'
           sudo mkdir -p /etc/letsencrypt/live/kovylek.ru
-          sudo cp -L /etc/letsencrypt/archive/kovylek.ru/* /etc/letsencrypt/live/kovylek.ru/
-          sudo chmod -R 755 /etc/letsencrypt/live/kovylek.ru
-          sudo chown -R root:docker /etc/letsencrypt/live/kovylek.ru
+          sudo cp /etc/letsencrypt/archive/kovylek.ru/privkey*.pem /etc/letsencrypt/live/kovylek.ru/privkey.pem
+          sudo cp /etc/letsencrypt/archive/kovylek.ru/fullchain*.pem /etc/letsencrypt/live/kovylek.ru/fullchain.pem
+          sudo chmod -R 644 /etc/letsencrypt/live/kovylek.ru
+          sudo chown -R root:root /etc/letsencrypt/live/kovylek.ru
           EOL
 
       - name: Deploy on server
