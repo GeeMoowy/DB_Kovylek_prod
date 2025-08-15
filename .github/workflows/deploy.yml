@@ -19,9 +19,9 @@ jobs:
       - name: Prepare environment file
         run: |
           echo "SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" > .env
-          echo "DB_NAME=${{ secrets.POSTGRES_DB }}" >> .env
-          echo "DB_USER=${{ secrets.POSTGRES_USER }}" >> .env
-          echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
           echo "DB_HOST=db" >> .env
           echo "DEBUG=0" >> .env
 
@@ -30,9 +30,18 @@ jobs:
           scp -o StrictHostKeyChecking=no -r .env docker-compose.yml nginx.conf ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
           scp -o StrictHostKeyChecking=no -r . ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
 
+      - name: Sync SSL certificates
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOL'
+          sudo mkdir -p /etc/letsencrypt/live/kovylek.ru
+          sudo cp -L /etc/letsencrypt/archive/kovylek.ru/* /etc/letsencrypt/live/kovylek.ru/
+          sudo chmod -R 755 /etc/letsencrypt/live/kovylek.ru
+          sudo chown -R root:docker /etc/letsencrypt/live/kovylek.ru
+          EOL
+
       - name: Deploy on server
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
           set -e
           cd ~/app
           docker compose down
@@ -44,4 +53,4 @@ jobs:
 
       - name: Health check
         run: |
-          curl --retry 5 --retry-delay 10 --retry-connrefused -X GET http://${{ secrets.SERVER_IP }}/api/health/
+          curl --retry 5 --retry-delay 10 --retry-connrefused -X GET https://${{ secrets.SERVER_IP }}/api/health/
