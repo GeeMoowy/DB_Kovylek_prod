@@ -46,6 +46,7 @@ jobs:
           set -e
           cd ~/app
           docker compose down
+          docker volume rm app_postgres_data
           docker compose up -d --build
           docker compose exec web python manage.py migrate --noinput
           docker compose exec web python manage.py collectstatic --noinput
