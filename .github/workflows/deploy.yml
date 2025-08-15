@@ -33,6 +33,7 @@ jobs:
       - name: Deploy on server
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          set -e
           cd ~/app
           docker compose down
           docker compose up -d --build

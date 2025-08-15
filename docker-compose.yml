@@ -36,6 +36,7 @@ services:
     ports:
       - "80:80"
     volumes:
+      - /etc/letsencrypt/live/kovylek.ru:/etc/letsencrypt/live/kovylek.ru:ro
       - ./nginx.conf:/etc/nginx/nginx.conf
       - static_volume:/app/staticfiles
       - media_volume:/app/media

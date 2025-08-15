@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
-from django.core.management.utils import get_random_secret_key
 from dotenv import load_dotenv
 import os
 
@@ -10,50 +9,48 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY') or get_random_secret_key().replace('django-insecure-', 'prod-')
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 DEBUG = True if os.getenv('DEBUG') == 'True' else False
 
-# Основные домены (латиница + punycode для кириллицы)
-BASE_DOMAINS = [
-    'kovylek.ru',
-    'xn--b1agncdq6g.xn--p1ai'  # Точный Punycode для ковылек.рф
-]
-
-# Автоматически генерируемые варианты
-GENERATED_HOSTS = [
-    *{host.lower() for host in BASE_DOMAINS},  # Уникализация и приведение к lowercase
-    *(f'www.{domain}' for domain in BASE_DOMAINS),
-]
-
-# Базовые локальные адреса
-LOCAL_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '[::1]'  # IPv6 localhost
-]
-
-# Яндекс Cloud IP (только если указаны в .env)
-YANDEX_HOSTS = list(filter(None, [
-    os.getenv('YANDEX_INTERNAL_IP'),
-    os.getenv('YANDEX_EXTERNAL_IP')
-]))
+# Основные домены
+BASE_DOMAINS = ['kovylek.ru']
 
 # Итоговый список ALLOWED_HOSTS
 ALLOWED_HOSTS = [
-    *GENERATED_HOSTS,
-    *LOCAL_HOSTS,
-    *YANDEX_HOSTS,
+    *{host.lower() for host in BASE_DOMAINS},  # Основной домен
+    *(f'www.{domain}' for domain in BASE_DOMAINS),
+    'localhost',
+    '127.0.0.1',
+    os.getenv('YANDEX_INTERNAL_IP', ''),
+    os.getenv('YANDEX_EXTERNAL_IP', ''),
     *filter(None, os.getenv('EXTRA_ALLOWED_HOSTS', '').split(','))
 ]
 
-# Проверка для production
-if not DEBUG:
-    if 'ковылек.рф' in ALLOWED_HOSTS:
-        raise ImproperlyConfigured(
-            'Для production используйте только Punycode (xn--b1agncdq6g.xn--p1ai) вместо кириллицы'
-        )
+# === Статика и медиа ===
+STATIC_URL = '/static/'
+STATIC_ROOT = '/app/staticfiles'  # Для Docker
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/app/media'         # Для Docker
+
+# === База данных ===
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ['POSTGRES_DB'],
+        'USER': os.environ['POSTGRES_USER'],
+        'PASSWORD': os.environ['POSTGRES_PASSWORD'],
+        'HOST': os.environ['DB_HOST'],
+        'PORT': os.getenv('DB_PORT', '5432'),
+        'OPTIONS': {
+            'connect_timeout': 3,
+            'sslmode': 'require'
+        }
+    }
+}
+
+# === Приложения и middleware ===
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -77,8 +74,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'config.urls'
-
+# === Шаблоны ===
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -95,23 +91,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'Kovylek_DB'),
-        'USER': os.getenv('POSTGRES_USER'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-        'OPTIONS': {
-            'connect_timeout': 3,
-            'sslmode': 'require'
-        }
-    }
-}
-
+# === Валидация паролей (ОБЯЗАТЕЛЬНО для продакшена!) ===
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -127,36 +107,29 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "TIMEOUT": 300,  # 5 минут
-    }
-}
-
+# === Остальные настройки ===
+ROOT_URLCONF = 'config.urls'
+WSGI_APPLICATION = 'config.wsgi.application'
+AUTH_USER_MODEL = 'users.User'
 LANGUAGE_CODE = 'ru-ru'
-
 TIME_ZONE = 'Europe/Moscow'
-
 USE_I18N = True
-USE_L18N = True
-
 USE_TZ = True
-
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-STATIC_ROOT = BASE_DIR / 'staticfiles'  # Для collectstatic
-MEDIA_ROOT = '/var/www/media'  # Вне контейнера
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'users.User'
+# # === Обязательные настройки безопасности для продакшена ===
+# SECURE_SSL_REDIRECT = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# SECURE_HSTS_SECONDS = 31536000  # 1 год
+# SECURE_HSTS_PRELOAD = True
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_CONTENT_TYPE_NOSNIFF = True
+# SECURE_BROWSER_XSS_FILTER = True
+# X_FRAME_OPTIONS = 'DENY'
 
-# Увеличим количество элементов на странице
+# === Оптимизация ===
 ADMIN_LIST_PER_PAGE = 50
 
 # Включим "быстрое редактирование" в списке
@@ -175,9 +148,14 @@ LOGGING = {
         'console': {
             'class': 'logging.StreamHandler',
         },
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': '/app/logs/django.log',
+        },
     },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
-    },
+        'root': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
 }
