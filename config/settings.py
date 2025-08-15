@@ -27,6 +27,7 @@ ALLOWED_HOSTS = [
 # === Статика и медиа ===
 STATIC_URL = '/static/'
 STATIC_ROOT = '/app/static/'  # Для Docker
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = '/app/media'         # Для Docker
