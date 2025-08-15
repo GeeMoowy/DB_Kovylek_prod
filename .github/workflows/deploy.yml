@@ -53,8 +53,9 @@ jobs:
           docker system prune -f
           EOF
 
-      - name: SSH test
+      - name: Simple check
         run: |
-          ssh -i "${{ secrets.SSH_PRIVATE_KEY }}" \
-          "${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}" \
-          "hostname"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "docker compose ps"
