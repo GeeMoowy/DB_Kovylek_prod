@@ -11,6 +11,10 @@ RUN apt-get update && \
     apt-get install -y gcc libpq-dev curl && \
     apt-get clean
 
+# Фикс прав для Poetry (добавьте эти строки)
+RUN mkdir -p /var/www/.cache/pypoetry && \
+    chown -R www-data:www-data /var/www/.cache
+
 # Установка Poetry
 ENV POETRY_VERSION=1.8.5
 RUN pip install --no-cache-dir poetry==${POETRY_VERSION}
