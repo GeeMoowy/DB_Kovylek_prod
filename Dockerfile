@@ -28,6 +28,3 @@ RUN poetry config virtualenvs.create false && \
 
 # 3. Копируем ВЕСЬ код
 COPY --chown=www-data:www-data . .
-
-# 4. Собираем статику
-RUN python manage.py collectstatic --noinput

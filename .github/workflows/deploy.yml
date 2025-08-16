@@ -45,14 +45,23 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
           set -e
           cd ~/app
+
+          # 1. Остановка и очистка
           docker compose down
+
+          # 2. Запуск с пересборкой
           docker compose up -d --build
-          
-          # Создаем папки и устанавливаем права
-          docker compose exec web mkdir -p /app/staticfiles /app/media
-          docker compose exec web chown -R www-data:www-data /app/staticfiles /app/media
-          
-          # Запускаем команды Django
+
+          # 3. Создание папок (если их нет)
+          docker compose exec web mkdir -p /app/staticfiles /app/media /var/www/.cache/pypoetry
+
+          # 4. Права доступа (как у вас было)
+          docker compose exec web chown -R www-data:www-data /app/staticfiles /app/media /var/www/.cache
+
+          # 5. Миграции и статика (ваш оригинальный порядок)
           docker compose exec web python manage.py migrate --noinput
           docker compose exec web python manage.py collectstatic --noinput
+
+          # 6. Дополнительная проверка (по желанию)
+          docker compose exec web ls -la /app/staticfiles/ | head -n 5
           EOF
