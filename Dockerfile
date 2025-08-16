@@ -9,7 +9,7 @@ RUN mkdir -p /app/staticfiles /app/media && \
 # Установка зависимостей для psycopg2 (если нужно)
 RUN apt-get update && \
     apt-get install -y gcc libpq-dev curl && \
-    apt-get clean && \
+    apt-get clean
 
 # Установка Poetry
 ENV POETRY_VERSION=1.8.5
