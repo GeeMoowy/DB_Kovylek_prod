@@ -36,10 +36,10 @@ MEDIA_ROOT = '/app/media/'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ['POSTGRES_DB'],
-        'USER': os.environ['POSTGRES_USER'],
-        'PASSWORD': os.environ['POSTGRES_PASSWORD'],
-        'HOST': os.environ['DB_HOST'],
+        'NAME': os.getenv('POSTGRES_DB', 'dummy_db_for_build'),
+        'USER': os.getenv('POSTGRES_USER', 'dummy_db_for_build'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'dummy_db_for_build'),
+        'HOST': os.getenv('DB_HOST', 'dummy_db_for_build'),
         'PORT': os.getenv('DB_PORT', '5432'),
         'OPTIONS': {
             'connect_timeout': 3,
