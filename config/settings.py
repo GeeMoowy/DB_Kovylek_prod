@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 import os
 
@@ -39,7 +38,7 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB', 'dummy_db_for_build'),
         'USER': os.getenv('POSTGRES_USER', 'dummy_db_for_build'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'dummy_db_for_build'),
-        'HOST': os.getenv('DB_HOST', 'dummy_db_for_build'),
+        'HOST': os.getenv('DB_HOST', 'db'),
         'PORT': os.getenv('DB_PORT', '5432'),
         'OPTIONS': {
             'connect_timeout': 3,
@@ -117,9 +116,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 # # === Обязательные настройки безопасности для продакшена ===
-# SECURE_SSL_REDIRECT = True
-# SESSION_COOKIE_SECURE = True
-# CSRF_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # SECURE_HSTS_SECONDS = 31536000  # 1 год
 # SECURE_HSTS_PRELOAD = True
