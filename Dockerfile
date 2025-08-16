@@ -30,6 +30,6 @@ RUN poetry config virtualenvs.create false && \
 COPY --chown=www-data:www-data . .
 
 # 4. Сборка статики (после копирования всех файлов)
-RUN python manage.py collectstatic --noinput && \
+RUN python manage.py collectstatic --noinput --ignore=*.admin && \
     chown -R www-data:www-data /app/staticfiles && \
     chmod -R 755 /app/staticfiles
