@@ -19,11 +19,15 @@ RUN mkdir -p /var/www/.cache/pypoetry && \
 ENV POETRY_VERSION=1.8.5
 RUN pip install --no-cache-dir poetry==${POETRY_VERSION}
 
-# Копируем зависимости и устанавливаем их
+# 1. Копируем только зависимости
 COPY pyproject.toml poetry.lock* ./
-RUN poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi && \
-    python manage.py collectstatic --noinput
 
-# Копируем остальное
-COPY --chown=appuser:appuser . .
+# 2. Устанавливаем зависимости (без текущего проекта)
+RUN poetry config virtualenvs.create false && \
+    poetry install --no-interaction --no-ansi --no-root
+
+# 3. Копируем ВЕСЬ код
+COPY --chown=www-data:www-data . .
+
+# 4. Собираем статику
+RUN python manage.py collectstatic --noinput
