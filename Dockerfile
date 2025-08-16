@@ -22,7 +22,8 @@ RUN pip install --no-cache-dir poetry==${POETRY_VERSION}
 # Копируем зависимости и устанавливаем их
 COPY pyproject.toml poetry.lock* ./
 RUN poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi
+    poetry install --no-interaction --no-ansi && \
+    python manage.py collectstatic --noinput
 
 # Копируем остальное
 COPY --chown=appuser:appuser . .
