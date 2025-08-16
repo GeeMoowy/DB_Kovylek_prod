@@ -46,9 +46,13 @@ jobs:
           set -e
           cd ~/app
           docker compose down
-          docker volume rm app_postgres_data
           docker compose up -d --build
+          
+          # Создаем папки и устанавливаем права
+          docker compose exec web mkdir -p /app/staticfiles /app/media
+          docker compose exec web chown -R www-data:www-data /app/staticfiles /app/media
+          
+          # Запускаем команды Django
           docker compose exec web python manage.py migrate --noinput
           docker compose exec web python manage.py collectstatic --noinput
-          docker system prune -f
           EOF

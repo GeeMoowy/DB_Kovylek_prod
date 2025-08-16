@@ -1,6 +1,7 @@
 services:
   web:
     build: .
+    user: "www-data:www-data"  # Явное указание пользователя
     command: poetry run gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4
     restart: unless-stopped
     env_file:
@@ -8,8 +9,8 @@ services:
     ports:
       - "8000:8000"  # Для дебага (в продакшне можно убрать)
     volumes:
-      - static_volume:/app/staticfiles
-      - media_volume:/app/media
+      - static_volume:/app/staticfiles:rw  # Права на запись
+      - media_volume:/app/media:rw          # Права на запись
     depends_on:
       db:
         condition: service_healthy
