@@ -12,7 +12,8 @@ RUN apt-get update && \
     apt-get clean && \
 
 # Установка Poetry
-RUN pip install poetry
+ENV POETRY_VERSION=1.8.5
+RUN pip install --no-cache-dir poetry==${POETRY_VERSION}
 
 # Копируем зависимости и устанавливаем их
 COPY pyproject.toml poetry.lock* ./
