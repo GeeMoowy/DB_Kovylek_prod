@@ -26,7 +26,7 @@ jobs:
           echo "DEBUG=0" >> .env
 
       - name: Copy files to server
-        run: scp -r . ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
+        run: scp -r -o StrictHostHostKeyChecking=no . ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
 
       - name: Deploy on server
         run: |
