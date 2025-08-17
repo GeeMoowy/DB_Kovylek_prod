@@ -27,41 +27,13 @@ jobs:
 
       - name: Copy files to server
         run: |
-          scp -o StrictHostKeyChecking=no -r .env docker-compose.yml nginx.conf ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
-          scp -o StrictHostKeyChecking=no -r . ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
-
-      - name: Sync SSL certificates
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOL'
-          sudo mkdir -p /etc/letsencrypt/live/kovylek.ru
-          sudo cp /etc/letsencrypt/archive/kovylek.ru/privkey*.pem /etc/letsencrypt/live/kovylek.ru/privkey.pem
-          sudo cp /etc/letsencrypt/archive/kovylek.ru/fullchain*.pem /etc/letsencrypt/live/kovylek.ru/fullchain.pem
-          sudo chmod -R 644 /etc/letsencrypt/live/kovylek.ru
-          sudo chown -R root:root /etc/letsencrypt/live/kovylek.ru
-          EOL
+          scp -o StrictHostKeyChecking=no .env docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
 
       - name: Deploy on server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-          set -e
           cd ~/app
-
-          # 1. Остановка и очистка
           docker compose down
-
-          # 2. Запуск с пересборкой
           docker compose up -d --build
-
-          # 3. Создание папок (если их нет)
-          docker compose exec web mkdir -p /app/staticfiles /app/media /var/www/.cache/pypoetry
-
-          # 4. Права доступа (как у вас было)
-          docker compose exec web chown -R www-data:www-data /app/staticfiles /app/media /var/www/.cache
-
-          # 5. Миграции и статика (ваш оригинальный порядок)
           docker compose exec web python manage.py migrate --noinput
-          docker compose exec web python manage.py collectstatic --noinput
-
-          # 6. Дополнительная проверка (по желанию)
-          docker compose exec web ls -la /app/staticfiles/ | head -n 5
           EOF

@@ -25,7 +25,7 @@ ALLOWED_HOSTS = [
 
 # === Статика и медиа ===
 STATIC_URL = '/static/'
-STATIC_ROOT = '/app/staticfiles/'
+STATIC_ROOT = '/app/staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 MEDIA_URL = '/media/'
