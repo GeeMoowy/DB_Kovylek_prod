@@ -27,7 +27,7 @@ jobs:
 
       - name: Copy files to server
         run: |
-          rsync -avz --delete --exclude-from='.gitignore' -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
+          rsync -avz --delete --exclude-from="$GITHUB_WORKSPACE/.gitignore" -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
 
       - name: Deploy on server
         run: |
