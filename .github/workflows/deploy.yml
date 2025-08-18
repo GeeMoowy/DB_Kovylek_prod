@@ -16,17 +16,25 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Clean and deploy
+      - name: Debug - List files before deploy
         run: |
-          # Просто копируем файлы через scp (без архива)
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "rm -rf ~/app/*"
-          scp -o StrictHostKeyChecking=no -r ./ ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
+          echo "Содержимое локального .github/workflows:"
+          ls -la .github/workflows
+          echo "Содержимое удалённого ~/app/.github/workflows:"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "ls -la ~/app/.github/workflows || echo 'Папка не существует!'"
 
-      - name: Restart containers
+      - name: Nuclear deploy
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-          cd ~/app
-          docker compose down
-          docker compose up -d --build
-          docker compose exec web python manage.py migrate --noinput
-          EOF
+          # 1. Удаляем ВСЁ в папке app
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "rm -rf ~/app/*"
+
+          # 2. Копируем ВСЁ из репозитория
+          scp -r ./* ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
+
+          # 3. Жёсткая пересборка без кэша
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+            cd ~/app
+            docker compose down
+            docker compose build --no-cache
+            docker compose up -d
+          "
