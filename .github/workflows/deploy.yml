@@ -16,41 +16,23 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Debug - Check local files
-        run: |
-          echo "Локальные файлы:"
-          ls -la .github/workflows
-          echo "Содержимое deploy.yml:"
-          cat .github/workflows/deploy.yml
-
-      - name: Nuclear deploy
-        run: |
-          # Добавляем сервер в known_hosts
-          mkdir -p ~/.ssh
-          ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-          
-          # Полностью очищаем папку app на сервере
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-            mkdir -p ~/app/.github/workflows
-            rm -rf ~/app/*
-          "
-          
-          # Копируем все файлы
-          scp -o StrictHostKeyChecking=no -r ./* ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
-
-      - name: Verify remote files
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-            echo 'Удаленные файлы:'
-            ls -la ~/app/.github/workflows
-            echo 'Содержимое deploy.yml:'
-            cat ~/app/.github/workflows/deploy.yml
-          "
-
-      - name: Restart containers
+      - name: Удалить ВСЁ на сервере (кроме .env и данных)
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
             cd ~/app
-            docker compose down
-            docker compose up -d --build
+            # Удаляем всё, кроме .env и папок с данными
+            find . -maxdepth 1 ! -name '.env' ! -name 'data' -exec rm -rf {} +
+          "
+
+      - name: Копируем файлы ПРОСТО и ПОНЯТНО
+        run: |
+          scp -o StrictHostKeyChecking=no -r ./* ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
+
+      - name: Жёсткий перезапуск контейнеров
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+            cd ~/app
+            docker compose down -v  # Удаляем контейнеры и volumes (если не нужны данные)
+            docker compose build --no-cache  # Собираем заново без кэша
+            docker compose up -d
           "
