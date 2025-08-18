@@ -16,23 +16,24 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Удалить ВСЁ на сервере (кроме .env и данных)
+      - name: Очистка сервера (безопасная)
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
             cd ~/app
-            # Удаляем всё, кроме .env и папок с данными
-            find . -maxdepth 1 ! -name '.env' ! -name 'data' -exec rm -rf {} +
+            # Удаляем только файлы, а не папки (чтобы избежать ошибок)
+            find . -maxdepth 1 -type f ! -name '.env' -delete
+            # Удаляем только пустые директории (кроме data/)
+            find . -mindepth 1 -type d ! -name 'data' -empty -delete
           "
 
-      - name: Копируем файлы ПРОСТО и ПОНЯТНО
+      - name: Копирование файлов
         run: |
           scp -o StrictHostKeyChecking=no -r ./* ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
 
-      - name: Жёсткий перезапуск контейнеров
+      - name: Перезапуск контейнеров
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
             cd ~/app
-            docker compose down -v  # Удаляем контейнеры и volumes (если не нужны данные)
-            docker compose build --no-cache  # Собираем заново без кэша
-            docker compose up -d
+            docker compose down
+            docker compose up -d --build
           "
