@@ -16,20 +16,13 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Prepare environment file
+      - name: Clean and deploy
         run: |
-          echo "SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" > .env
-          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
-          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
-          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
-          echo "DB_HOST=db" >> .env
-          echo "DEBUG=0" >> .env
+          # Просто копируем файлы через scp (без архива)
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "rm -rf ~/app/*"
+          scp -o StrictHostKeyChecking=no -r ./ ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
 
-      - name: Copy files to server
-        run: |
-          rsync -avz --delete --exclude-from="$GITHUB_WORKSPACE/.gitignore" -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
-
-      - name: Deploy on server
+      - name: Restart containers
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
           cd ~/app
