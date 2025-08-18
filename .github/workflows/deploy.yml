@@ -16,25 +16,41 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Debug - List files before deploy
+      - name: Debug - Check local files
         run: |
-          echo "Содержимое локального .github/workflows:"
+          echo "Локальные файлы:"
           ls -la .github/workflows
-          echo "Содержимое удалённого ~/app/.github/workflows:"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "ls -la ~/app/.github/workflows || echo 'Папка не существует!'"
+          echo "Содержимое deploy.yml:"
+          cat .github/workflows/deploy.yml
 
       - name: Nuclear deploy
         run: |
-          # 1. Удаляем ВСЁ в папке app
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "rm -rf ~/app/*"
+          # Добавляем сервер в known_hosts
+          mkdir -p ~/.ssh
+          ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+          
+          # Полностью очищаем папку app на сервере
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+            mkdir -p ~/app/.github/workflows
+            rm -rf ~/app/*
+          "
+          
+          # Копируем все файлы
+          scp -o StrictHostKeyChecking=no -r ./* ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
 
-          # 2. Копируем ВСЁ из репозитория
-          scp -r ./* ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
+      - name: Verify remote files
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+            echo 'Удаленные файлы:'
+            ls -la ~/app/.github/workflows
+            echo 'Содержимое deploy.yml:'
+            cat ~/app/.github/workflows/deploy.yml
+          "
 
-          # 3. Жёсткая пересборка без кэша
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+      - name: Restart containers
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
             cd ~/app
             docker compose down
-            docker compose build --no-cache
-            docker compose up -d
+            docker compose up -d --build
           "
